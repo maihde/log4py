@@ -92,15 +92,15 @@ def fileConfig(f):
   props = _parsePropertiesFile(f)
   try:
     repoWideThresh = props["log4j.threshold"].strip()
-    logging.getLogger().setLevel(_LEVEL_TRANS[repoWideThresh])
+    logging.getLogger().setLevel(_LEVEL_TRANS[repoWideThresh.strip().upper()])
   except KeyError:
     logging.getLogger().setLevel(logging.NOTSET)
 
   # First load up all loggers and set their levels
   loggers = {}
   rootLoggerCfg = props["log4j.rootLogger"].split(",")
-  if rootLoggerCfg[0].strip() in _LEVEL_TRANS.keys():
-    logging.getLogger().setLevel(_LEVEL_TRANS[rootLoggerCfg[0]])
+  if rootLoggerCfg[0].strip().upper() in _LEVEL_TRANS.keys():
+    logging.getLogger().setLevel(_LEVEL_TRANS[rootLoggerCfg[0].strip().upper()])
     del rootLoggerCfg[0]
   else:
     logging.getLogger().setLevel(logging.NOTSET)
@@ -139,7 +139,6 @@ def fileConfig(f):
           for layoutOption in layoutOptions:
             opt = layoutOption[len(appenderKey+".layout."):]
             value = props[layoutOption].strip()
-            print opt, value
             setattr(layout, opt, value)
         elif opt.endswith("filter"):
           pass
@@ -151,15 +150,3 @@ def fileConfig(f):
       logger.addHandler(handler)
       if layout:
         handler.setFormatter(layout)
-
-if __name__ == "__main__":
-  fileConfig("logging.properties")
-  logging.debug("a debug")
-  logging.info("an info")
-  logging.warn("a warning")
-  logging.error("an error")
-  logging.critical("a critical")
-  try:
-    raise StandardError()
-  except:
-    logging.exception("an exeption")

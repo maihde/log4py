@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 # vim: sw=2: et:
+#
+# Copyright (c) 2010 by Michael Ihde <mike.ihde@randomwalking.com>
+#
+#                All Rights Reserved
+#
+# Permission to use, copy, modify, and distribute this software
+# and its documentation for any purpose and without fee is hereby
+# granted, provided that the above copyright notice appear in all
+# copies and that both that copyright notice and this permission
+# notice appear in supporting documentation, and that the name of
+# Michael Ihde  not be used in advertising or publicity
+# pertaining to distribution of the software without specific, written
+# prior permission.
+#
+# Michael Ihde DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+# SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS, IN NO EVENT SHALL Michael Ihde BE LIABLE FOR
+# ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+#
 import logging, logging.handlers
 
 ##############################################################################
@@ -13,14 +36,15 @@ _FORMATTER_TRANS = {"c": ("%(name)", "s"),            # Name of the logger (logg
                     "r": ("%(relativeCreated)", "d"), # Time in milliseconds when the LogRecord was created, relative to start
                     "t": ("%(thread)", "d"),          # Thread ID (if available)
                     "t": ("%(threadName)", "s"),      # Thread name (if available)
-                    "m": ("%(message)", "s"),        # The result of record.getMessage(), computed just as the record is emitted
+                    "m": ("%(message)", "s"),         # The result of record.getMessage(), computed just as the record is emitted
                     "C": ("", ""),
-                    "d": ("", ""),
+                    "d": ("%(asctime)", "s"),
                     "l": ("", ""),
                     "n": ("", ""),
                     "x": ("", ""), 
                     "X": ("", ""),
                    }
+
 
 class PatternLayout(logging.Formatter,object):
   def setConversionPattern(self, pattern):
@@ -29,28 +53,38 @@ class PatternLayout(logging.Formatter,object):
     # Translate the pattern to python logging formats
     i = 0
     while i < len(pattern):
-      char = pattern[i]
-      if char == "%":
+      if pattern[i] != "%":
+        fmt.append(pattern[i])
         i += 1
-        char = pattern[i]
-        if char == "%":
+      else:
+        i += 1
+        if pattern[i] == "%":
           fmt.append("%%")
         else:
           modifier = []
-          while char in ("-", ".", '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'):
-            modifier.append(char)
+          while pattern[i] in ("-", ".", '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'):
+            modifier.append(pattern[i])
             i += 1
-            char = pattern[i]
-          i += 1
           modifier = "".join(modifier)
+
+          char = pattern[i]
+          i += 1
+          
+          # If it's a date spec, see if there is a custom date format
+          if char == "d" and pattern[i] == "{":
+            datefmt = []
+            i += 1
+            while pattern[i] != "}":
+              datefmt.append(pattern[i])
+              i += 1
+            i += 1
+            datefmt = "".join(datefmt)
+            # TODO : don't ingore the datefmt
+
           fmt.append(_FORMATTER_TRANS[char][0])
           fmt.append(modifier)
           fmt.append(_FORMATTER_TRANS[char][1])
-      else:
-        i += 1
-        fmt.append(char)
     self._fmt = "".join(fmt)
-    print self._fmt 
 
   def getConversionPattern(self):
     return pattern
